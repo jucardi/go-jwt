@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jucardi/go-jwt/encoding"
-	"github.com/jucardi/go-jwt/signing"
 )
 
 func splitToken(token string) (header, body, signature, signed []byte, err error) {
@@ -35,8 +35,8 @@ func splitToken(token string) (header, body, signature, signed []byte, err error
 	return
 }
 
-func encode(alg signing.Algorithm, token *Token) (string, error) {
-	header, err := json.Marshal(TokenHeader{headerAlgKey: alg, headerTypeKey: "JWT"})
+func encode(header TokenHeader, token IToken) (string, error) {
+	hBytes, err := json.Marshal(header)
 	if err != nil {
 		return "", errors.New("failed to marshal token header, " + err.Error())
 	}
@@ -45,7 +45,7 @@ func encode(alg signing.Algorithm, token *Token) (string, error) {
 		return "", errors.New("failed to marshal token body, " + err.Error())
 	}
 
-	return strings.Join([]string{encoding.EncodeSegment(header), encoding.EncodeSegment(tBytes)}, "."), nil
+	return strings.Join([]string{encoding.EncodeSegment(hBytes), encoding.EncodeSegment(tBytes)}, "."), nil
 }
 
 func getVal(m map[string]interface{}, key string) interface{} {
@@ -60,4 +60,24 @@ func getString(m map[string]interface{}, key string) string {
 		return val
 	}
 	return ""
+}
+
+func getTimeInt(m map[string]interface{}, key string) int64 {
+	val, ok := m[key]
+	if !ok {
+		return 0
+	}
+	switch v := val.(type) {
+	case int64:
+		return v
+	case float64:
+		return int64(v)
+	case json.Number:
+		ret, _ := v.Int64()
+		return ret
+	case string:
+		date, _ := time.Parse(time.RFC3339, v)
+		return date.UTC().Unix()
+	}
+	return 0
 }
