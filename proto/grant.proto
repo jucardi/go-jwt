@@ -1,0 +1,16 @@
+syntax = "proto3";
+package jwt;
+
+// Grant encapsulates a generated token and indicates the token type and expiration without having to parse it
+//
+// swagger: model Grant
+message Grant {
+    // Token is the token string.
+    string token = 1;
+
+    // Exp is the iso8601 time timestamp when the token will expire
+    string exp = 2;
+
+    // Purpose indicates the token purpose
+    string type = 3;
+}
